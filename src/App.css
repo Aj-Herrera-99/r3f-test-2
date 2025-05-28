@@ -17,7 +17,7 @@
 
 @font-face {
     font-family: "Orbitron";
-    src: url("../public/fonts/Orbitron-VariableFont_wght.ttf");
+    src: url("/fonts/Orbitron-VariableFont_wght.ttf");
     font-weight: normal;
     font-style: normal;
 }
