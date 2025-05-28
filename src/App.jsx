@@ -63,7 +63,7 @@ function App() {
             </Canvas>
           </>
         }
-        {/* <Stats /> */}
+        <Stats />
       </main>
     </>
   )

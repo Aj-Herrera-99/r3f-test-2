@@ -3,17 +3,19 @@ import Lights from "./Lights";
 import gsap from "gsap"
 import { Float, OrbitControls, Text } from "@react-three/drei";
 import { useThree } from "@react-three/fiber";
-import { Raycaster } from "three";
-import { focusOnObject } from "../utils/focusOnObject";
-import { resetCamera } from "../utils/resetCamera";
 import { takeScreenshot } from "../utils/takeScreenshot";
 import PortalBtn from "./PortalBtn";
+import { focusOnClick } from "../utils/focusOnClick";
 
 export default function Scene2({ setScreenshot }) {
+    const { gl, scene, camera } = useThree()
     const meshRef = useRef(null)
     const controlsRef = useRef(null)
     const [controls, setControls] = useState(null)
-    const { gl, scene, camera } = useThree()
+    const [, forceUpdate] = useState(0);
+
+    const initialCameraPosition = camera.position.clone();
+    const initialTarget = controls?.target?.clone();
     // const [isClicked, setIsClicked] = useState(false)
 
     const handleEnterPortal = () => {
@@ -39,12 +41,18 @@ export default function Scene2({ setScreenshot }) {
         }
     }, [controlsRef])
 
+    useEffect(() => {
+        const handleResize = () => {
+            forceUpdate(n => n + 1);
+        }
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize)
+    }, [forceUpdate])
+
     return (
         <>
             <OrbitControls
                 ref={controlsRef}
-                // enableRotate={false}
-
                 enablePan={false}
                 enableZoom={false}
             />
@@ -54,107 +62,86 @@ export default function Scene2({ setScreenshot }) {
                     <boxGeometry args={[1, 1, 1]} />
                     <meshStandardMaterial color={0xff0000} />
                 </mesh>
-                <LeftText controls={controls} />
-                <RightText controls={controls} />
+                <LeftText controls={controls} camera={camera} initialCameraPosition={initialCameraPosition} initialTarget={initialTarget} />
+                <RightText controls={controls} camera={camera} initialCameraPosition={initialCameraPosition} initialTarget={initialTarget} />
             </Float>
             <PortalBtn content="go back" onClick={handleEnterPortal} />
         </>
     )
 }
 
-function LeftText({ controls }) {
-    const { camera, scene, pointer } = useThree();
-    const initialCameraPosition = camera.position.clone();
-    const initialTarget = controls?.target?.clone();
-
+function LeftText({ controls, camera, initialCameraPosition, initialTarget }) {
+    const ref = useRef()
     const rot = [0, window.innerWidth >= 640 ? 1 : .7, 0]
-    const pos = window.innerWidth >= 1550 ? [-3.7, 1.5, 0] : window.innerWidth >= 1280 ? [-3, 1.5, 0] : window.innerWidth >= 1024 ? [-2, 1.5, 0] : window.innerWidth >= 768 ? [-1.3, 1.5, 0] : innerWidth >= 640 ? [-.8, 1.5, 0] : [-.35, 1.5, 0]
-    const [, forceUpdate] = useState(0);
+    const pos = leftTextPos()
     const [isClicked, setIsClicked] = useState(false)
 
-    const raycaster = new Raycaster();
-
     const handleClick = () => {
-        if (!isClicked) {
-            // Lancia il raycaster dalla camera
-            raycaster.setFromCamera(pointer, camera);
-
-            const intersects = raycaster.intersectObjects(scene.children, true); // true = cerca in profondità
-
-            if (intersects.length > 0 && controls) {
-                const targetMesh = intersects[0].object;
-                focusOnObject(targetMesh, camera, controls);
-            }
-        } else {
-            console.log('test')
-            resetCamera(camera, initialCameraPosition, initialTarget, controls)
-        }
-        setIsClicked(c => !c)
+        const res = focusOnClick(isClicked, ref.current, camera, initialCameraPosition, initialTarget, controls)
+        setIsClicked(res)
     }
 
-    useEffect(() => {
-        const handleResize = () => {
-            forceUpdate(n => n + 1);
-        }
-        window.addEventListener('resize', handleResize);
-        return () => window.removeEventListener('resize', handleResize)
-    }, [forceUpdate])
-
-    return <Text onClick={handleClick} font="/fonts/Orbitron-VariableFont_wght.ttf" fontSize={.15} position={pos} rotation={rot}>
+    return (<Text
+        ref={ref}
+        onClick={handleClick}
+        font="/fonts/Orbitron-VariableFont_wght.ttf"
+        fontSize={.15}
+        position={pos}
+        rotation={rot}
+    >
         Lorem ipsum, dolor sit amet {"\n"}
         consectetur  adipisicing elit.{"\n"}
         Dolore exercitationem  tempore sed!{"\n"}
         Nihil officia magni rerum  {"\n"}
         voluptas sunt modi quis!
-    </Text>
+    </Text>)
 }
 
-function RightText({ controls }) {
-    const { camera, scene, pointer } = useThree();
-    const initialCameraPosition = camera.position.clone();
-    const initialTarget = controls?.target?.clone();
-
+function RightText({ controls, camera, initialCameraPosition, initialTarget }) {
+    const ref = useRef()
     const rot = [0, window.innerWidth >= 640 ? -1 : -.5, 0]
-    const pos = window.innerWidth >= 1500 ? [3.5, -1.5, 0] : window.innerWidth >= 1280 ? [3, -1.5, 0] : window.innerWidth >= 1024 ? [2.3, -1.5, 0] : window.innerWidth >= 768 ? [1.5, -1.5, 0] : window.innerWidth >= 640 ? [1.2, -1.5, 0] : [.8, -1.5, 0]
-    const [, forceUpdate] = useState(0);
+    const pos = rightTextPos()
     const [isClicked, setIsClicked] = useState(false)
 
-    const raycaster = new Raycaster();
-
     const handleClick = () => {
-        if (!isClicked) {
-            // Lancia il raycaster dalla camera
-            raycaster.setFromCamera(pointer, camera);
-
-            const intersects = raycaster.intersectObjects(scene.children, true); // true = cerca in profondità
-
-            if (intersects.length > 0 && controls) {
-                const targetMesh = intersects[0].object;
-                focusOnObject(targetMesh, camera, controls);
-            }
-        } else {
-            console.log('test')
-            resetCamera(camera, initialCameraPosition, initialTarget, controls)
-        }
-        setIsClicked(c => !c)
+        const res = focusOnClick(isClicked, ref.current, camera, initialCameraPosition, initialTarget, controls)
+        setIsClicked(res)
     }
 
-    useEffect(() => {
-        const handleResize = () => {
-            forceUpdate(n => n + 1);
-        }
-        window.addEventListener('resize', handleResize);
-        return () => window.removeEventListener('resize', handleResize)
-    }, [forceUpdate])
-
-    return <Text onClick={handleClick} font="/fonts/Orbitron-VariableFont_wght.ttf" fontSize={.15} position={pos} rotation={rot}>
-        Lorem ipsum, dolor sit amet {"\n"}
-        consectetur  adipisicing elit.{"\n"}
-        Dolore exercitationem {"\n"}
-        tempore sed! Nihil officia {"\n"}
-        magni rerum
-        voluptas sunt {"\n"}
-        modi quis!
-    </Text>
+    return (
+        <Text
+            ref={ref}
+            onClick={handleClick}
+            font="/fonts/Orbitron-VariableFont_wght.ttf"
+            fontSize={.15}
+            position={pos}
+            rotation={rot}
+        >
+            Lorem ipsum, dolor sit amet {"\n"}
+            consectetur  adipisicing elit.{"\n"}
+            Dolore exercitationem {"\n"}
+            tempore sed! Nihil officia {"\n"}
+            magni rerum
+            voluptas sunt {"\n"}
+            modi quis!
+        </Text>
+    )
 }
 
+const leftTextPos = () => {
+    return window.innerWidth >= 1550 ? [-3.7, 1.5, 0]
+        : window.innerWidth >= 1280 ? [-3, 1.5, 0]
+            : window.innerWidth >= 1024 ? [-2, 1.5, 0]
+                : window.innerWidth >= 768 ? [-1.3, 1.5, 0]
+                    : innerWidth >= 640 ? [-.8, 1.5, 0]
+                        : [-.35, 1.5, 0]
+}
+
+const rightTextPos = () => {
+    return window.innerWidth >= 1500 ? [3.5, -1.5, 0]
+        : window.innerWidth >= 1280 ? [3, -1.5, 0]
+            : window.innerWidth >= 1024 ? [2.3, -1.5, 0]
+                : window.innerWidth >= 768 ? [1.5, -1.5, 0]
+                    : window.innerWidth >= 640 ? [1.2, -1.5, 0]
+                        : [.8, -1.5, 0]
+}
