@@ -1,7 +1,7 @@
 import { Html } from "@react-three/drei";
 import { useState } from "react";
 
-export default function PortalBtn({ content, onClick }) {
+export default function PortalBtn({ content = "next", onClick }) {
 
     const [isClicked, setIsClicked] = useState(false)
     const handleClick = () => {

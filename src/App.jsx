@@ -5,9 +5,10 @@ import { Stats } from '@react-three/drei'
 import { useEffect, useRef, useState } from 'react'
 import gsap from "gsap"
 import Scene2 from './components/Scene2'
+import Scene3 from './components/Scene3'
+import Scene4 from './components/Scene4'
+
 function App() {
-
-
   const [screenshot, setScreenshot] = useState(null)
   const screenshotRef = useRef(null)
   const pRef = useRef(null)
@@ -16,7 +17,6 @@ function App() {
 
   useEffect(() => {
     if (screenshot && screenshotRef.current && pRef.current) {
-
       gsap.to(pRef.current,
         {
           opacity: 1, duration: 2, ease: "power3.in"
@@ -25,14 +25,14 @@ function App() {
       const tween = gsap.to(screenshotRef.current, {
         transform: "scale(20)",
         rotate: "90deg",
-        duration: 3.5,
+        duration: 3,
         ease: "power3.in",
         onUpdate() {
           setBlurLvl(tween.progress())
         },
         onComplete() {
           setScreenshot(null)
-          setCurrScene(c => c === 1 ? 2 : 1)
+          setCurrScene(c => c % 3 + 1)
         }
       })
     }
@@ -52,13 +52,19 @@ function App() {
             <p ref={pRef} className='absolute top-1/2 left-1/2 -translate-1/2 opacity-0'>Lorem, ipsum dolor.</p>
           </div> :
           <>
-            <Canvas style={{ background: 'black' }}>
+            <Canvas style={{ background: currScene === 3 ? "#c5d5d7" : "black" }}>
 
               {currScene === 1 &&
                 <Scene setScreenshot={setScreenshot} />
               }
               {currScene === 2 &&
                 <Scene2 setScreenshot={setScreenshot} />
+              }
+              {currScene === 3 &&
+                <Scene3 setScreenshot={setScreenshot} />
+              }
+              {currScene === 4 &&
+                <Scene4 setScreenshot={setScreenshot} />
               }
             </Canvas>
           </>

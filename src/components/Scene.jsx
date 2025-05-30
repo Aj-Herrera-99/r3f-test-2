@@ -1,6 +1,6 @@
 import Lights from "./Lights";
-import { Float, Html, MeshTransmissionMaterial, Text } from "@react-three/drei";
-import { useRef, useState } from "react";
+import { Float, MeshTransmissionMaterial, Text } from "@react-three/drei";
+import { useEffect, useRef, useState } from "react";
 import gsap from 'gsap'
 import { useFrame, useThree } from "@react-three/fiber";
 import { MathUtils } from "three";
@@ -46,47 +46,46 @@ export default function Scene({ setScreenshot }) {
 }
 
 function TorusMesh({ position = [0, 0, 0], rotation = [0, 0, 0], args = [], color = 0xffffff, enterPortal }) {
-    const meshRef = useRef(null);
     const { pointer } = useThree();
     const [mouseStartPos, setMouseStartPos] = useState(null)
     const [isHovered, setIsHovered] = useState(false)
+    const meshRef = useRef(null);
+    const positionTweenRef = useRef(null);
+    const rotationTweenRef = useRef(null);
 
-    useFrame(() => {
-        if (!meshRef.current) return
-        if (enterPortal) {
-            gsap.killTweensOf(meshRef.current.position)
-            gsap.to(meshRef.current.position, {
+    useEffect(() => {
+        if (enterPortal && meshRef.current) {
+            positionTweenRef.current?.kill()
+            rotationTweenRef.current?.kill()
+
+            positionTweenRef.current = gsap.to(meshRef.current.position, {
                 x: position[0],
                 y: position[1],
-                duration: .7,
+                duration: 0.7,
                 ease: 'power2.out',
-            })
+            });
 
-            gsap.to(meshRef.current.rotation, {
+            rotationTweenRef.current = gsap.to(meshRef.current.rotation, {
                 x: rotation[0],
                 y: rotation[1],
-                duration: .7,
+                duration: 0.7,
                 ease: 'power2.out',
-            })
-            setMouseStartPos(null);
-            return
+            });
         }
-        if (isHovered) {
-            // position
-            meshRef.current.position.x = MathUtils.lerp(meshRef.current.position.x, pointer.x * 2, 0.003)
-            meshRef.current.position.y = MathUtils.lerp(meshRef.current.position.y, pointer.y * 2, 0.003)
-        } else if (!mouseStartPos) {
-            // position
-            meshRef.current.position.x = MathUtils.lerp(meshRef.current.position.x, position[0], 0.003)
-            meshRef.current.position.y = MathUtils.lerp(meshRef.current.position.y, position[1], 0.003)
-        }
-        return
+    }, [enterPortal, position, rotation]);
+
+    useFrame(() => {
+        if (!meshRef.current && !isHovered) return
+        meshRef.current.position.x = MathUtils.lerp(meshRef.current.position.x, pointer.x * 2, 0.003)
+        meshRef.current.position.y = MathUtils.lerp(meshRef.current.position.y, pointer.y * 2, 0.003)
     })
 
-    // Calcola la direzione rispetto al centro dello schermo
     const handlePointerEnter = () => {
         if (!meshRef.current) return
         setIsHovered(true)
+
+        positionTweenRef.current?.kill()
+        rotationTweenRef.current?.kill()
 
         setMouseStartPos({
             x: pointer.x,
@@ -95,44 +94,42 @@ function TorusMesh({ position = [0, 0, 0], rotation = [0, 0, 0], args = [], colo
     }
 
     const handlePointerLeave = () => {
-        if (!meshRef.current) return
-        if (enterPortal) return
+        if (!meshRef.current || enterPortal || !mouseStartPos) return
         setIsHovered(false)
 
-        if (mouseStartPos) {
-            gsap.killTweensOf(meshRef.current.position)
+        positionTweenRef.current?.kill()
+        rotationTweenRef.current?.kill()
 
-            gsap.to(meshRef.current.position, {
-                x: (pointer.x - mouseStartPos.x) * .85,
-                y: (pointer.y - mouseStartPos.y) * .85,
-                duration: 2,
-                ease: 'power2.out',
-            }).eventCallback("onComplete", () => {
-                setMouseStartPos(null);
-                gsap.to(meshRef.current.position, {
+        positionTweenRef.current = gsap.to(meshRef.current.position, {
+            x: (pointer.x - mouseStartPos.x) * .85,
+            y: (pointer.y - mouseStartPos.y) * .85,
+            duration: 2,
+            ease: 'power2.out',
+            onComplete() {
+                positionTweenRef.current = gsap.to(meshRef.current.position, {
                     x: position[0],
                     y: position[1],
                     duration: 2,
                     ease: 'power2.in',
+                    onComplete() { setMouseStartPos(null); }
                 })
-            })
+            }
+        })
 
-            gsap.to(meshRef.current.rotation, {
-                y: (pointer.x - mouseStartPos.x) * 3,
-                x: -(pointer.y - mouseStartPos.y) * 3,
-                duration: 2,
-                ease: 'power2.out',
-            }).eventCallback("onComplete", () => {
-                if (meshRef.current) {
-                    gsap.to(meshRef.current.rotation, {
-                        x: rotation[0],
-                        y: rotation[1],
-                        duration: 2,
-                        ease: 'power2.in',
-                    })
-                }
-            })
-        }
+        rotationTweenRef.current = gsap.to(meshRef.current.rotation, {
+            y: (pointer.x - mouseStartPos.x) * 3,
+            x: -(pointer.y - mouseStartPos.y) * 3,
+            duration: 2,
+            ease: 'power2.out',
+            onComplete() {
+                rotationTweenRef.current = gsap.to(meshRef.current.rotation, {
+                    x: rotation[0],
+                    y: rotation[1],
+                    duration: 2,
+                    ease: 'power2.in',
+                })
+            }
+        })
     }
 
     return (

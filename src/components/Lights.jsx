@@ -4,7 +4,7 @@ import { DirectionalLightHelper } from "three"
 
 export default function Lights() {
     const directionalLightRef = useRef()
-    // useHelper(directionalLightRef, DirectionalLightHelper, 0.3, 0xffffff)
+    useHelper(directionalLightRef, DirectionalLightHelper, 0.3, 0xffffff)
     return (
         <>
             <Environment preset="city" />

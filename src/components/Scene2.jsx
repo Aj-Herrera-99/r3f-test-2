@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import Lights from "./Lights";
 import gsap from "gsap"
-import { Float, OrbitControls, Text } from "@react-three/drei";
+import { Float, OrbitControls, PresentationControls, Text } from "@react-three/drei";
 import { useThree } from "@react-three/fiber";
 import { takeScreenshot } from "../utils/takeScreenshot";
 import PortalBtn from "./PortalBtn";
@@ -53,19 +53,28 @@ export default function Scene2({ setScreenshot }) {
         <>
             <OrbitControls
                 ref={controlsRef}
+                enableRotate={false}
                 enablePan={false}
                 enableZoom={false}
             />
             <Lights />
             <Float floatIntensity={.0005} speed={.3} floatingRange={.4}>
-                <mesh ref={meshRef} position={[0, 0]}>
-                    <boxGeometry args={[1, 1, 1]} />
-                    <meshStandardMaterial color={0xff0000} />
-                </mesh>
+                <PresentationControls
+                    global
+                    config={{ mass: 2, tension: 500 }}
+                    snap
+                    rotation={[0, 0, 0]}
+                    polar={[-Math.PI / 3, Math.PI / 3]}
+                    azimuth={[-Math.PI / 2, Math.PI / 2]}>
+                    <mesh ref={meshRef} position={[0, 0]}>
+                        <boxGeometry args={[1, 1, 1]} />
+                        <meshStandardMaterial color={0xff0000} />
+                    </mesh>
+                </PresentationControls>
                 <LeftText controls={controls} camera={camera} initialCameraPosition={initialCameraPosition} initialTarget={initialTarget} />
                 <RightText controls={controls} camera={camera} initialCameraPosition={initialCameraPosition} initialTarget={initialTarget} />
             </Float>
-            <PortalBtn content="go back" onClick={handleEnterPortal} />
+            <PortalBtn onClick={handleEnterPortal} />
         </>
     )
 }
